@@ -8,10 +8,10 @@
 //
 // Web pages can't read the ambient light sensor or change the real screen
 // brightness, so everything here works in pixels. A schedule (sunset to
-// sunrise, computed on the device, or custom times) fades the warm light in and
-// out gradually, and dark mode can follow the same schedule or the system.
+// sunrise, computed on the device, or custom times) fades between a day and a
+// night profile, each with its own brightness and warmth; night can be dark.
 
-import { settings } from './settings.js'
+import { settings, THEMES } from './settings.js'
 
 const RAMP_MIN = 40               // minutes to fade warm light in/out around the switch time
 const COOLEST_K = 6500            // warmth 0: neutral daylight
@@ -94,9 +94,9 @@ const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); r
 
 // The night window that starts on `day`: { start, end } or 'always' / 'never'
 const nightWindow = day => {
-    if (settings.warmSchedule === 'custom') {
-        const start = atTime(day, settings.warmFrom)
-        let end = atTime(day, settings.warmTo)
+    if (settings.nightSchedule === 'custom') {
+        const start = atTime(day, settings.nightFrom)
+        let end = atTime(day, settings.nightTo)
         if (end <= start) end = addDays(end, 1)
         return { start, end }
     }
@@ -122,9 +122,9 @@ export const nightFactor = (now = new Date()) => {
     return n
 }
 
-// Next switch times, for the panel
+// Next switch times, for the panel (only for the automatic schedule)
 export const scheduleSummary = (now = new Date()) => {
-    if (settings.warmSchedule === 'off') return null
+    if (settings.nightMode !== 'auto') return null
     let w = nightWindow(addDays(now, -1))
     if (w === 'always') return { always: true }
     if (w === 'never' || now >= w.end) w = nightWindow(now)
@@ -134,27 +134,77 @@ export const scheduleSummary = (now = new Date()) => {
 }
 
 // ---------------------------------------------------------------- state
+// Two profiles, like a reader you set up once: day and night. Each has its own
+// brightness and warmth, and night can switch to the dark theme. In "auto" the
+// app fades between them on the schedule.
 const systemDark = matchMedia('(prefers-color-scheme: dark)')
 const listeners = new Set()
-let current = { rgb: [1, 1, 1], warmth: 0, level: 1, dark: false }
+let current = { rgb: [1, 1, 1], warmth: 0, level: 1, dark: false, night: 0 }
 
-const compute = () => {
-    const night = settings.warmSchedule === 'off' ? 1 : nightFactor()
+let preview = null // 'day' | 'night' while the panel previews the other profile
+
+const nightAmount = () => {
+    if (preview) return preview === 'night' ? 1 : 0
+    switch (settings.nightMode) {
+        case 'on': return 1
+        case 'off': return 0
+        case 'system': return systemDark.matches ? 1 : 0
+        default: return nightFactor()
+    }
+}
+
+const scheduled = () => {
+    const p = preview
+    preview = null
+    try { return nightAmount() } finally { preview = p }
+}
+
+const appearance = n => {
+    const lerp = (a, b) => a + (b - a) * n
     // quantize so the gradual fade doesn't restyle on every tiny change
-    const warmth = Math.round(settings.warmth * night * 4) / 4
-    const level = brightnessLevel(settings.brightness)
+    const warmth = Math.round(lerp(settings.warmth, settings.nightWarmth) * 4) / 4
+    const level = brightnessLevel(lerp(settings.brightness, settings.nightBrightness))
     const tint = warmthRGB(warmth)
-    const dark = settings.nightDark === 'system' ? systemDark.matches
-        : settings.nightDark === 'schedule' ? settings.warmSchedule !== 'off' && night >= 0.5
-        : false
-    return { rgb: tint.map(c => c * level), warmth, level, dark, night }
+    const dark = settings.nightTheme === 'dark' && n >= 0.5
+    return { rgb: tint.map(c => c * level), warmth, level, dark, night: n }
 }
 
 const same = (a, b) => a.dark === b.dark && a.rgb.every((x, i) => Math.abs(x - b.rgb[i]) < 0.002)
 
+const mulHex = (hex, rgb) => toHex(parseHex(hex).map((c, i) => c * rgb[i]))
+
+// boot.js reads this before the app loads, so a launch at night is dark from
+// the very first frame instead of flashing the light theme.
+const saveBootHint = () => {
+    try {
+        const windows = []
+        if (settings.nightMode === 'auto') for (const offset of [-1, 0, 1, 2]) {
+            const w = nightWindow(addDays(new Date(), offset))
+            windows.push(w === 'always' ? 'always' : w === 'never' ? 'never' : [+w.start, +w.end])
+        }
+        const look = n => {
+            const a = appearance(n)
+            const theme = THEMES.find(t => t.id === (a.dark ? 'dark' : settings.theme)) ?? THEMES[1]
+            const ui = a.dark ? '#111111' : '#f4f1ea'
+            return { dark: a.dark || theme.id === 'dark', bg: mulHex(theme.bg, a.rgb), fg: mulHex(theme.fg, a.rgb), ui: mulHex(ui, a.rgb) }
+        }
+        localStorage.setItem('openspark:boot', JSON.stringify({
+            mode: settings.nightMode, windows, day: look(0), night: look(1),
+        }))
+    } catch { /* storage unavailable */ }
+}
+
 export const light = {
     get state() { return current },
     get active() { return current.rgb.some(x => x < 0.998) },
+    // is the night profile the one showing (so the panel edits it)?
+    get isNight() { return (preview ? scheduled() : current.night) >= 0.5 },
+    // show one profile while the light panel edits it; null returns to the schedule
+    setPreview(profile) {
+        if (preview === profile) return
+        preview = profile
+        this.refresh(true)
+    },
     // multiply a #rrggbb color by the current light
     lit(hex) {
         const rgb = parseHex(hex)
@@ -174,12 +224,15 @@ export const light = {
         return () => listeners.delete(f)
     },
     refresh(force = false) {
-        const next = compute()
+        const next = appearance(nightAmount())
         const changed = force || !same(next, current)
         current = next
         settings.themeOverride = next.dark ? 'dark' : null
         settings.lightActive = this.active
-        if (changed) for (const f of listeners) f(current)
+        if (changed) {
+            if (!preview) saveBootHint()
+            for (const f of listeners) f(current)
+        }
     },
     async useMyLocation() {
         const pos = await new Promise((resolve, reject) =>
@@ -194,9 +247,10 @@ export const light = {
 
 settings.lit = hex => light.lit(hex)
 
-const LIGHT_KEYS = ['brightness', 'warmth', 'warmSchedule', 'warmFrom', 'warmTo', 'location', 'nightDark']
+const LIGHT_KEYS = ['brightness', 'warmth', 'nightBrightness', 'nightWarmth', 'nightMode', 'nightSchedule',
+    'nightFrom', 'nightTo', 'nightTheme', 'location', 'theme']
 settings.onChange(patch => {
-    if (Object.keys(patch).some(k => LIGHT_KEYS.includes(k))) light.refresh()
+    if (Object.keys(patch).some(k => LIGHT_KEYS.includes(k))) light.refresh(true)
 })
 systemDark.addEventListener('change', () => light.refresh())
 // follow the schedule; also catch up when the app comes back from the background

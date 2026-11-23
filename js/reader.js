@@ -8,7 +8,7 @@ import {
 } from './settings.js'
 import { icon } from './icons.js'
 import { light } from './light.js'
-import { renderLightControls } from './light-ui.js'
+import { renderLightControls, resetLightEditing } from './light-ui.js'
 import {
     $, h, debounce, toast, percent, formatMinutes, downloadText, storage, promptText, confirmDialog,
 } from './util.js'
@@ -488,6 +488,7 @@ export class Reader {
             .some(s => !$(s).hidden)
     }
     closePanels() {
+        if (!$('#panel-light').hidden) resetLightEditing()
         for (const s of ['#panel-aa', '#panel-light', '#panel-goto', '#panel-search', '#panel-notebook']) $(s).hidden = true
         $('#scrim').hidden = true
     }
@@ -818,7 +819,7 @@ export class Reader {
         }
         pop.replaceChildren(
             h('div', { class: 'popup-colors' }, HIGHLIGHT_COLORS.map(([name, value]) => h('button', {
-                class: 'swatch', style: { background: value }, title: `Highlight ${name}`, 'aria-label': `Highlight ${name}`,
+                class: 'swatch', style: { background: light.lit(value) }, title: `Highlight ${name}`, 'aria-label': `Highlight ${name}`,
                 onclick: () => create(name),
             }))),
             h('div', { class: 'popup-actions' },
@@ -855,7 +856,7 @@ export class Reader {
         }
         pop.replaceChildren(
             h('div', { class: 'popup-colors' }, HIGHLIGHT_COLORS.map(([name, val]) => h('button', {
-                class: `swatch${a.color === name ? ' active' : ''}`, style: { background: val }, 'aria-label': `Change to ${name}`,
+                class: `swatch${a.color === name ? ' active' : ''}`, style: { background: light.lit(val) }, 'aria-label': `Change to ${name}`,
                 onclick: async () => { await update({ color: name }); this.#hidePopup() },
             }))),
             a.note ? h('div', { class: 'popup-note' }, a.note) : null,
@@ -907,7 +908,7 @@ export class Reader {
                 h('div', { class: 'note-meta' },
                     h('span', { class: `note-kind ${a.type}` },
                         a.type === 'bookmark' ? 'Bookmark' : a.note ? 'Note' : 'Highlight'),
-                    a.type === 'highlight' ? h('span', { class: 'note-dot', style: { background: colorValue(a.color) } }) : null,
+                    a.type === 'highlight' ? h('span', { class: 'note-dot', style: { background: light.lit(colorValue(a.color)) } }) : null,
                     h('span', { class: 'muted' }, [a.chapter, a.location ? `Location ${a.location.toLocaleString()}` : ''].filter(Boolean).join(' · ')),
                     h('button', {
                         class: 'icon-btn small', 'aria-label': 'Delete', title: 'Delete', html: icon('trash'),

@@ -33,12 +33,15 @@ Everything stays on your device.
 - Themes: White, Paper, Sepia, Mint, Dark. Optional grayscale images, and an optional **e-ink refresh flash**
 - A **device frame** on large screens so the page looks like a screen (Auto / On / Off)
 
-**Light (easy on the eyes)**
-- **Warmth** (0–24): tints the whole screen from neutral to deep amber, pages, images and highlights included, the way a warm front light does
-- **Brightness** (0–24): dims the page itself, so it can go darker than your screen's lowest setting while keeping text contrast
-- **Warm light schedule**: sunset to sunrise (computed on the device, from your time zone or, if you allow it, your location) or custom times, fading in and out gradually
-- **Dark mode at night**: on the same schedule, or following the system
-- Pure-black dark theme, so OLED pixels switch off
+**Made for reading in bed**
+- **Day and night profiles**, each with its own **brightness** and **warmth** (0–24). At night (sunset to sunrise by default) the app fades to the night profile on its own: by default a pure-black page with dim, warm amber text
+- **Warmth** tints everything (pages, images, highlights, menus) from neutral to deep amber, taking out blue light like a warm reading lamp
+- **Brightness** dims the page itself, so it goes darker than your phone's lowest setting
+- Adjust the light in bed and the night profile remembers it for every night after; preview either profile from the Light panel
+- Night can follow sunset (computed on the device), custom hours, or your phone's dark mode
+- **No bright flashes:** night colors are chosen before the first frame, the launch screen is dark, and in dark mode there are no white buttons, toasts or badges; book covers are dimmed
+- **Opens where you left off**, straight into the book, like waking an e-reader
+- The screen still auto-locks normally, so you can fall asleep mid-chapter
 
 **Library**
 - Drag and drop or pick files; duplicates are detected

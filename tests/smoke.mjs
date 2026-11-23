@@ -31,6 +31,9 @@ const shot = async name => SHOTS && page.screenshot({ path: join(SHOTS, `${name}
 const assert = (cond, msg) => { if (!cond) throw new Error(`Assertion failed: ${msg}`) }
 
 await page.goto(BASE + '?nosw')
+await page.waitForFunction(() => globalThis.openspark)
+// tests run in daylight mode, whatever the time is where they run
+await page.evaluate(() => openspark.settings.set({ nightMode: 'off' }))
 await page.waitForSelector('#lib-empty:not([hidden])')
 await shot('01-empty')
 
@@ -93,7 +96,7 @@ await page.keyboard.press('Escape')
 // front light: warmth tints the page and is wired into images through #os-light
 await page.keyboard.press('l')
 await page.waitForSelector('#panel-light:not([hidden])')
-await page.evaluate(() => openspark.settings.set({ warmth: 20, brightness: 18 }))
+await page.evaluate(() => openspark.settings.set({ nightMode: 'off', warmth: 20, brightness: 18 }))
 await page.waitForTimeout(300)
 await shot('08b-light')
 const lit = await page.evaluate(() => {
@@ -102,7 +105,7 @@ const lit = await page.evaluate(() => {
     return { warm: r > g && g > b, matrix: !!doc.querySelector('#os-light feColorMatrix[values]') }
 })
 assert(lit.warm && lit.matrix, `warm light tints the page (${JSON.stringify(lit)})`)
-await page.evaluate(() => openspark.settings.set({ warmth: 0, brightness: 24 }))
+await page.evaluate(() => openspark.settings.set({ nightMode: 'auto', warmth: 0, brightness: 24 }))
 await page.keyboard.press('Escape')
 
 await page.keyboard.press('Escape') // back to library

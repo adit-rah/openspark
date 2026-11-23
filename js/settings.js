@@ -72,14 +72,18 @@ const DEFAULTS = {
     showPercent: true,
     flash: 'off',           // 'off' | 'page' | 'chapter'   e-ink style refresh flash
     animate: false,         // sliding page turns (e-ink readers don't animate)
-    // front light (see light.js)
-    brightness: 24,         // 0–24; below 24 dims the page itself, under the device minimum
-    warmth: 0,              // 0–24; 0 = neutral, 24 = deep amber
-    warmSchedule: 'off',    // 'off' | 'sun' (sunset → sunrise) | 'custom'
-    warmFrom: '21:00',
-    warmTo: '07:00',
+    // front light (see light.js). Day and night profiles; night is the bedtime setup.
+    brightness: 24,         // day, 0–24; below 24 dims the page itself, under the device minimum
+    warmth: 0,              // day, 0–24; 0 = neutral, 24 = deep amber
+    nightBrightness: 14,
+    nightWarmth: 16,
+    nightTheme: 'dark',     // 'dark' | 'same' (keep the day theme, just dimmer and warmer)
+    nightMode: 'auto',      // 'auto' (schedule) | 'system' (follow iOS/OS dark mode) | 'on' | 'off'
+    nightSchedule: 'sun',   // 'sun' (sunset → sunrise) | 'custom'
+    nightFrom: '21:00',
+    nightTo: '07:00',
     location: null,         // { lat, lon } rounded, only if the user shares it
-    nightDark: 'off',       // 'off' | 'schedule' | 'system'
+    resumeOnLaunch: true,   // open straight into the last book, like waking a reader
     // library
     libView: 'grid',
     libSort: 'recent',

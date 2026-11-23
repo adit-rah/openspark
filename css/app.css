@@ -557,3 +557,44 @@ input[type="range"]#progress-slider {
     .top-actions .icon-btn { width: 38px; }
     .setting-row { gap: 8px; }
 }
+
+/* ───────── night: nothing bright, nothing solid-white ─────────
+   In dark mode, elements that would be drawn "inverted" (light fills) become
+   outlines or faint tints, so the screen stays uniformly dim in a dark room. */
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .btn-primary:hover {
+    background: transparent; color: var(--fg); border-color: var(--fg); opacity: 1;
+}
+:root[data-theme="dark"] .badge-new { background: transparent; color: var(--fg); border: 1px solid var(--hair); }
+:root[data-theme="dark"] #toast {
+    background: var(--card); color: var(--fg); border: 1px solid var(--hair);
+}
+:root[data-theme="dark"] .seg.active,
+:root[data-theme="dark"] .chip.active {
+    background: color-mix(in srgb, var(--ui-fg, var(--fg)) 22%, transparent); color: inherit;
+}
+:root[data-theme="dark"] .dot.on { background: color-mix(in srgb, var(--ui-fg, var(--fg)) 65%, transparent); }
+:root[data-theme="dark"] .search-hit mark {
+    background: color-mix(in srgb, var(--ui-fg) 25%, transparent); color: inherit; text-decoration: underline;
+}
+:root[data-theme="dark"] .cover img,
+:root[data-theme="dark"] .collection-stack img { filter: brightness(.7) saturate(.85); }
+:root[data-theme="dark"] .book-progress { background: rgba(0,0,0,.6); border-color: rgba(255,255,255,.35); }
+:root[data-theme="dark"] .book-progress > div { background: rgba(255,255,255,.55); }
+:root[data-theme="dark"] .light-slider.warm::-webkit-slider-runnable-track { opacity: .55; }
+:root[data-theme="dark"] .light-slider.warm::-moz-range-track { opacity: .55; }
+:root[data-theme="dark"] .theme-choice { filter: brightness(.75); }
+:root[data-theme="dark"] .swatch, :root[data-theme="dark"] .note-dot { filter: brightness(.7) saturate(.8); }
+:root[data-theme="dark"] #scrim { background: rgba(0,0,0,.35); }
+
+/* day / night profile tabs in the light panel */
+.profile-tabs { display: flex; gap: 8px; margin: 4px 0 6px; }
+.profile-tab {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 10px; border: 1.5px solid var(--hair); border-radius: 10px; background: none; cursor: pointer;
+    font-weight: 700; font-size: 14px;
+}
+.profile-tab svg { width: 18px; height: 18px; }
+.profile-tab.active { border-color: var(--fg); }
+.profile-now { font-size: 11px; font-weight: 600; opacity: .6; text-transform: uppercase; letter-spacing: .05em; }
+:root[data-theme="dark"] .status { opacity: .45; }

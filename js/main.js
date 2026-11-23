@@ -4,7 +4,7 @@ import { db, requestPersistence } from './db.js'
 import { fontFaceCSS, settings } from './settings.js'
 import { hydrateIcons, icon } from './icons.js'
 import { light } from './light.js'
-import { renderLightControls } from './light-ui.js'
+import { renderLightControls, resetLightEditing } from './light-ui.js'
 import { $, toast, modal, h, storage } from './util.js'
 
 // fonts for the app UI (book pages get their own copy)
@@ -19,9 +19,10 @@ const applyUITheme = () => {
     const overlay = $('#light-overlay')
     overlay.style.background = light.cssColor()
     overlay.hidden = !light.active || document.body.dataset.view === 'reader'
+    const ui = light.lit(theme.id === 'dark' ? '#111111' : '#f4f1ea')
+    document.documentElement.style.background = document.body.dataset.view === 'reader' ? theme.bg : ui
     if (document.body.dataset.view !== 'reader')
-        document.querySelector('meta[name="theme-color"]')
-            ?.setAttribute('content', light.lit(theme.id === 'dark' ? '#111111' : '#f4f1ea'))
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', ui)
 }
 settings.onChange(p => { if ('theme' in p) applyUITheme() })
 light.onChange(applyUITheme)
@@ -30,7 +31,7 @@ $('#btn-lib-light').addEventListener('click', () => {
     const body = h('div', {})
     const render = () => body.replaceChildren(renderLightControls(render))
     render()
-    modal({ title: 'Light', body, actions: [{ label: 'Done', primary: true }] })
+    modal({ title: 'Light', body, actions: [{ label: 'Done', primary: true }], onClose: resetLightEditing })
 })
 
 const library = new Library({ onOpen: id => { location.hash = `#/read/${encodeURIComponent(id)}` } })
@@ -46,6 +47,8 @@ const show = name => {
     $('#library').hidden = name !== 'library'
     $('#reader').hidden = name !== 'reader'
     document.body.dataset.view = name
+    // remember where we were, so a relaunch can go straight back into the book
+    storage.set('openspark:lastView', name)
     applyUITheme()
 }
 
@@ -126,6 +129,14 @@ if ('launchQueue' in window) {
 }
 
 await library.load()
+
+// Like waking an e-reader: reopen the book you were reading, without passing
+// through the (brighter, busier) library. Only if you left from inside a book.
+if (settings.resumeOnLaunch && (!location.hash || location.hash === '#/')
+    && storage.get('openspark:lastView', 'library') === 'reader') {
+    const last = [...library.books].filter(b => b.lastOpenedAt).sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)[0]
+    if (last) history.replaceState(null, '', `#/read/${encodeURIComponent(last.id)}`)
+}
 route()
 requestPersistence()
 
