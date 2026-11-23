@@ -44,7 +44,7 @@ export const THEMES = [
     { id: 'paper', label: 'Paper', bg: '#f4f1ea', fg: '#1b1b1b', ui: '#f4f1ea', link: '#1b1b1b' },
     { id: 'sepia', label: 'Sepia', bg: '#f3e7cf', fg: '#4a3a28', ui: '#f3e7cf', link: '#4a3a28' },
     { id: 'green', label: 'Mint', bg: '#d7ead5', fg: '#14261a', ui: '#d7ead5', link: '#14261a' },
-    { id: 'dark', label: 'Dark', bg: '#0d0d0d', fg: '#d8d8d8', ui: '#0d0d0d', link: '#d8d8d8' },
+    { id: 'dark', label: 'Dark', bg: '#000000', fg: '#d2d2d2', ui: '#000000', link: '#d2d2d2' },
 ]
 
 export const FOOTER_MODES = [
@@ -72,6 +72,14 @@ const DEFAULTS = {
     showPercent: true,
     flash: 'off',           // 'off' | 'page' | 'chapter'   e-ink style refresh flash
     animate: false,         // sliding page turns (e-ink readers don't animate)
+    // front light (see light.js)
+    brightness: 24,         // 0–24; below 24 dims the page itself, under the device minimum
+    warmth: 0,              // 0–24; 0 = neutral, 24 = deep amber
+    warmSchedule: 'off',    // 'off' | 'sun' (sunset → sunrise) | 'custom'
+    warmFrom: '21:00',
+    warmTo: '07:00',
+    location: null,         // { lat, lon } rounded, only if the user shares it
+    nightDark: 'off',       // 'off' | 'schedule' | 'system'
     // library
     libView: 'grid',
     libSort: 'recent',
@@ -95,9 +103,25 @@ export const settings = {
         listeners.add(f)
         return () => listeners.delete(f)
     },
+    // set by light.js: a forced theme (dark at night) and the front-light color filter
+    themeOverride: null,
+    lit: x => x,
+    lightActive: false,
+    // the theme as it should be drawn right now, with the front light applied
     getTheme() {
-        return THEMES.find(t => t.id === this.theme) ?? THEMES[1]
+        const t = THEMES.find(t => t.id === (this.themeOverride ?? this.theme)) ?? THEMES[1]
+        return { ...t, base: t, bg: this.lit(t.bg), fg: this.lit(t.fg), link: this.lit(t.link) }
     },
+}
+
+// Images: optional grayscale, dimmed in dark mode, and tinted by the front light
+// through an SVG color matrix that the reader injects into each page (#os-light).
+const imageFilter = (s, theme) => {
+    const f = []
+    if (s.grayscale) f.push('grayscale(1)', 'contrast(1.05)')
+    if (theme.id === 'dark') f.push('brightness(.85)')
+    if (s.lightActive) f.push('url(#os-light)')
+    return f.length ? `img, svg:not(#os-light-svg), video, canvas { filter: ${f.join(' ')}; }` : ''
 }
 
 // CSS injected into every page of the book.
@@ -159,8 +183,7 @@ body *:not(img):not(svg):not(svg *):not(video):not(canvas) {
 }
 a:link, a:visited { color: ${theme.link} !important; text-decoration: underline; text-decoration-thickness: .06em; text-underline-offset: .15em; }
 ` : ''}
-${theme.id === 'dark' ? `img, svg { filter: brightness(.85); }` : ''}
-${s.grayscale ? `img, svg, image, video { filter: grayscale(1) contrast(1.05) ${theme.id === 'dark' ? 'brightness(.85)' : ''}; }` : ''}
+${imageFilter(s, theme)}
 pre { white-space: pre-wrap !important; }
 ::selection { background: ${theme.id === 'dark' ? 'rgba(255,255,255,.28)' : 'rgba(0,0,0,.16)'}; }
 aside[epub|type~="endnote"],

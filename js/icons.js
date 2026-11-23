@@ -29,6 +29,10 @@ export const icons = {
     folder: svg('<path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/>'),
     chevron: svg('<path d="M9 6l6 6-6 6"/>'),
     chevronDown: svg('<path d="M6 9l6 6 6-6"/>'),
+    sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>'),
+    sunSmall: svg('<circle cx="12" cy="12" r="3"/><path d="M12 6v1M12 17v1M6 12h1M17 12h1M7.8 7.8l.7.7M15.5 15.5l.7.7M7.8 16.2l.7-.7M15.5 8.5l.7-.7"/>'),
+    warm: svg('<path d="M12 3c2.5 3 5 5.6 5 9.5A5 5 0 0 1 7 12.5C7 10 8.3 8.5 9.5 7c.3 2 1.2 3 2.5 3.5C11.5 8 11.7 5.5 12 3z"/>'),
+    moon: svg('<path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z"/>'),
     info: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8v.01"/>'),
 }
 

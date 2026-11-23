@@ -7,6 +7,8 @@ import {
     settings, bookCSS, FONTS, FONT_SIZES, LINE_SPACING, MARGINS, THEMES, FOOTER_MODES,
 } from './settings.js'
 import { icon } from './icons.js'
+import { light } from './light.js'
+import { renderLightControls } from './light-ui.js'
 import {
     $, h, debounce, toast, percent, formatMinutes, downloadText, storage, promptText, confirmDialog,
 } from './util.js'
@@ -18,6 +20,7 @@ const HIGHLIGHT_COLORS = [
     ['orange', '#f6ac5a'],
 ]
 const colorValue = name => HIGHLIGHT_COLORS.find(([n]) => n === name)?.[1] ?? name
+const SVG_NS = 'http://www.w3.org/2000/svg'
 
 const BYTES_PER_LOCATION = 150       // roughly the granularity of a Kindle "location"
 const SPEED_KEY = 'openspark:speed'  // reading speed samples, bytes per minute
@@ -81,6 +84,7 @@ export class Reader {
 
         $('#btn-back').innerHTML = icon('back')
         $('#btn-aa').innerHTML = icon('aa')
+        $('#btn-light').innerHTML = icon('sun')
         $('#btn-goto').innerHTML = icon('goto')
         $('#btn-search').innerHTML = icon('search')
         $('#btn-notebook').innerHTML = icon('notebook')
@@ -88,6 +92,7 @@ export class Reader {
 
         $('#btn-back').addEventListener('click', () => this.onClose())
         $('#btn-aa').addEventListener('click', () => this.openPanel('aa'))
+        $('#btn-light').addEventListener('click', () => this.openPanel('light'))
         $('#btn-goto').addEventListener('click', () => this.openPanel('goto'))
         $('#btn-search').addEventListener('click', () => this.openPanel('search'))
         $('#btn-notebook').addEventListener('click', () => this.openPanel('notebook'))
@@ -112,6 +117,18 @@ export class Reader {
             if (keys.some(k => ['theme', 'frame'].includes(k))) this.#applyFrame()
             if (keys.some(k => ['footer', 'showPercent'].includes(k))) this.#renderStatus()
         })
+        // front light: warmth, brightness, schedule, dark at night
+        light.onChange(() => {
+            this.#applyPageColors()
+            if (!this.view) return
+            this.#applyStyles()
+            this.#applyFrame()
+            for (const { doc, index } of this.view.renderer.getContents()) {
+                this.#injectLightFilter(doc)
+                this.#drawAnnotations(index)
+            }
+        })
+        this.#applyPageColors()
     }
 
     // ------------------------------------------------------------------ open/close
@@ -154,7 +171,7 @@ export class Reader {
         view.addEventListener('create-overlay', e => this.#drawAnnotations(e.detail.index))
         view.addEventListener('draw-annotation', e => {
             const { draw, annotation } = e.detail
-            if (annotation.type === 'highlight') draw(Overlayer.highlight, { color: colorValue(annotation.color) })
+            if (annotation.type === 'highlight') draw(Overlayer.highlight, { color: light.lit(colorValue(annotation.color)) })
         })
         view.addEventListener('show-annotation', e => this.#onShowAnnotation(e.detail))
         view.addEventListener('external-link', e => {
@@ -203,13 +220,41 @@ export class Reader {
     // ------------------------------------------------------------------ styles & layout
     #applyStyles() {
         this.view?.renderer.setStyles?.(bookCSS(settings))
-        const theme = settings.getTheme()
-        this.screen.dataset.theme = theme.id
-        this.screen.style.setProperty('--page-bg', theme.bg)
-        this.screen.style.setProperty('--page-fg', theme.fg)
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.bg)
+        this.#applyPageColors()
         if (this.view?.isFixedLayout)
-            this.view.renderer.style.background = theme.bg
+            this.view.renderer.style.background = settings.getTheme().bg
+    }
+    // page colors (with the front light applied) for the reader chrome, menus and dialogs
+    #applyPageColors() {
+        const theme = settings.getTheme()
+        const root = document.documentElement.style
+        this.screen.dataset.theme = theme.id
+        root.setProperty('--page-bg', theme.bg)
+        root.setProperty('--page-fg', theme.fg)
+        if (document.body.dataset.view === 'reader')
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.bg)
+    }
+    // An SVG color-matrix filter, referenced by the book CSS as url(#os-light), tints
+    // images with the front light. It goes after <body> so it can't shift any CFIs.
+    #injectLightFilter(doc) {
+        let svg = doc.getElementById('os-light-svg')
+        if (!svg) {
+            svg = doc.createElementNS(SVG_NS, 'svg')
+            svg.id = 'os-light-svg'
+            svg.setAttribute('aria-hidden', 'true')
+            svg.setAttribute('width', '0')
+            svg.setAttribute('height', '0')
+            svg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none')
+            const filter = doc.createElementNS(SVG_NS, 'filter')
+            filter.id = 'os-light'
+            filter.setAttribute('color-interpolation-filters', 'sRGB')
+            const matrix = doc.createElementNS(SVG_NS, 'feColorMatrix')
+            matrix.setAttribute('type', 'matrix')
+            filter.append(matrix)
+            svg.append(filter)
+            doc.documentElement.append(svg)
+        }
+        svg.querySelector('feColorMatrix').setAttribute('values', light.matrix())
     }
     #applyLayout() {
         const r = this.view?.renderer
@@ -230,6 +275,7 @@ export class Reader {
 
     // ------------------------------------------------------------------ events
     #onLoad({ doc, index }) {
+        this.#injectLightFilter(doc)
         doc.addEventListener('keydown', this.#onKey)
         doc.addEventListener('wheel', e => this.#onWheel(e), { passive: true })
         // tap zones: translate iframe coordinates into screen coordinates
@@ -290,8 +336,8 @@ export class Reader {
         if (typing || e.metaKey || e.ctrlKey || e.altKey) return
         if (this.#anyPanelOpen()) return
         switch (e.key) {
-            case 'ArrowLeft': case 'h': this.view.goLeft(); break
-            case 'ArrowRight': case 'l': this.view.goRight(); break
+            case 'ArrowLeft': this.view.goLeft(); break
+            case 'ArrowRight': this.view.goRight(); break
             case 'ArrowUp': case 'PageUp': case 'k': this.view.prev(); break
             case 'ArrowDown': case 'PageDown': case 'j': this.view.next(); break
             case ' ': e.shiftKey ? this.view.prev() : this.view.next(); break
@@ -300,6 +346,7 @@ export class Reader {
             case 'f': case '/': this.openPanel('search'); break
             case 'g': case 't': this.openPanel('goto'); break
             case 'a': this.openPanel('aa'); break
+            case 'L': case 'l': this.openPanel('light'); break
             case 'n': this.openPanel('notebook'); break
             default: return
         }
@@ -437,11 +484,11 @@ export class Reader {
         return Promise.resolve(p).catch(e => console.error(e))
     }
     #anyPanelOpen() {
-        return ['#panel-aa', '#panel-goto', '#panel-search', '#panel-notebook']
+        return ['#panel-aa', '#panel-light', '#panel-goto', '#panel-search', '#panel-notebook']
             .some(s => !$(s).hidden)
     }
     closePanels() {
-        for (const s of ['#panel-aa', '#panel-goto', '#panel-search', '#panel-notebook']) $(s).hidden = true
+        for (const s of ['#panel-aa', '#panel-light', '#panel-goto', '#panel-search', '#panel-notebook']) $(s).hidden = true
         $('#scrim').hidden = true
     }
     openPanel(name) {
@@ -453,6 +500,7 @@ export class Reader {
         this.#hidePopup()
         ;({
             aa: () => this.#renderAa(),
+            light: () => this.#renderLight(),
             goto: () => this.#renderGoto(),
             search: () => this.#renderSearch(),
             notebook: () => this.#renderNotebook(),
@@ -542,6 +590,14 @@ export class Reader {
                 onclick: () => { this.#aaTab = id; this.#renderAa() },
             }, label))),
             h('div', { class: 'aa-body' }, body))
+    }
+
+    // ---- Light (brightness & warmth)
+    #renderLight() {
+        $('#panel-light').replaceChildren(
+            h('div', { class: 'sheet-handle' }),
+            this.#panelHeader('Light'),
+            h('div', { class: 'aa-body' }, renderLightControls(() => this.#renderLight())))
     }
 
     // ---- Go to (table of contents)

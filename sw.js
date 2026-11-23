@@ -1,6 +1,6 @@
 // Offline support: cache the app shell so the reader works without a network.
 // Books themselves live in IndexedDB, not in this cache.
-const VERSION = 'openspark-v2'
+const VERSION = 'openspark-v3'
 const SHELL = [
     './',
     './index.html',
@@ -15,6 +15,8 @@ const SHELL = [
     './js/reader.js',
     './js/importer.js',
     './js/settings.js',
+    './js/light.js',
+    './js/light-ui.js',
     './js/db.js',
     './js/util.js',
     './js/icons.js',

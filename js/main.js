@@ -3,18 +3,35 @@ import { Reader } from './reader.js'
 import { db, requestPersistence } from './db.js'
 import { fontFaceCSS, settings } from './settings.js'
 import { hydrateIcons, icon } from './icons.js'
+import { light } from './light.js'
+import { renderLightControls } from './light-ui.js'
 import { $, toast, modal, h, storage } from './util.js'
 
 // fonts for the app UI (book pages get their own copy)
 document.head.append(Object.assign(document.createElement('style'), { textContent: fontFaceCSS() }))
 hydrateIcons()
 
-// the app UI follows the reading theme: dark when reading in dark, paper otherwise
+// The app UI follows the reading theme (dark when reading in dark, paper otherwise)
+// and the front light, which tints the library through a multiply overlay.
 const applyUITheme = () => {
-    document.documentElement.dataset.theme = settings.theme === 'dark' ? 'dark' : 'light'
+    const theme = settings.getTheme()
+    document.documentElement.dataset.theme = theme.id === 'dark' ? 'dark' : 'light'
+    const overlay = $('#light-overlay')
+    overlay.style.background = light.cssColor()
+    overlay.hidden = !light.active || document.body.dataset.view === 'reader'
+    if (document.body.dataset.view !== 'reader')
+        document.querySelector('meta[name="theme-color"]')
+            ?.setAttribute('content', light.lit(theme.id === 'dark' ? '#111111' : '#f4f1ea'))
 }
-applyUITheme()
 settings.onChange(p => { if ('theme' in p) applyUITheme() })
+light.onChange(applyUITheme)
+
+$('#btn-lib-light').addEventListener('click', () => {
+    const body = h('div', {})
+    const render = () => body.replaceChildren(renderLightControls(render))
+    render()
+    modal({ title: 'Light', body, actions: [{ label: 'Done', primary: true }] })
+})
 
 const library = new Library({ onOpen: id => { location.hash = `#/read/${encodeURIComponent(id)}` } })
 const reader = new Reader({
@@ -29,6 +46,7 @@ const show = name => {
     $('#library').hidden = name !== 'library'
     $('#reader').hidden = name !== 'reader'
     document.body.dataset.view = name
+    applyUITheme()
 }
 
 let opening = null
@@ -63,8 +81,6 @@ const route = async () => {
     } else {
         if (reader.record) await reader.close()
         show('library')
-        document.querySelector('meta[name="theme-color"]')
-            ?.setAttribute('content', settings.getTheme().id === 'dark' ? '#111111' : '#f4f1ea')
         library.render()
     }
 }

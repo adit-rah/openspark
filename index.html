@@ -31,6 +31,7 @@
     <div class="lib-title-row">
       <h1 class="lib-title">Library</h1>
       <div class="lib-actions">
+        <button class="icon-btn" id="btn-lib-light" title="Light: brightness and warmth" aria-label="Light: brightness and warmth"><span data-icon="sun"></span></button>
         <button class="icon-btn" id="btn-view-mode" title="Switch between grid and list" aria-label="Switch between grid and list"></button>
         <button class="icon-btn" id="btn-sort" title="Sort and filter" aria-label="Sort and filter" aria-haspopup="menu"></button>
         <button class="btn btn-primary" id="btn-add"><span class="btn-icon" data-icon="plus"></span><span>Add books</span></button>
@@ -83,6 +84,7 @@
           <button class="icon-btn" id="btn-back" title="Back to library" aria-label="Back to library"></button>
           <div class="top-title" id="reader-title"></div>
           <div class="top-actions">
+            <button class="icon-btn" id="btn-light" title="Light" aria-label="Light: brightness and warmth"></button>
             <button class="icon-btn" id="btn-aa" title="Display settings" aria-label="Display settings"></button>
             <button class="icon-btn" id="btn-goto" title="Go to" aria-label="Go to"></button>
             <button class="icon-btn" id="btn-search" title="Search in book" aria-label="Search in book"></button>
@@ -102,6 +104,7 @@
       <!-- sheets / panels -->
       <div id="scrim" hidden></div>
       <div id="panel-aa" class="sheet" hidden role="dialog" aria-label="Display settings"></div>
+      <div id="panel-light" class="sheet" hidden role="dialog" aria-label="Light"></div>
       <div id="panel-goto" class="drawer" hidden role="dialog" aria-label="Go to"></div>
       <div id="panel-search" class="drawer" hidden role="dialog" aria-label="Search"></div>
       <div id="panel-notebook" class="drawer" hidden role="dialog" aria-label="Notebook"></div>
@@ -116,6 +119,8 @@
   </div>
 </section>
 
+<!-- front light over the library (the reader colors its pages directly) -->
+<div id="light-overlay" aria-hidden="true" hidden></div>
 <div id="menu-layer"></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <div id="modal-layer"></div>

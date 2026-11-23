@@ -33,6 +33,13 @@ Everything stays on your device.
 - Themes: White, Paper, Sepia, Mint, Dark. Optional grayscale images, and an optional **e-ink refresh flash**
 - A **device frame** on large screens so the page looks like a screen (Auto / On / Off)
 
+**Light (easy on the eyes)**
+- **Warmth** (0–24): tints the whole screen from neutral to deep amber, pages, images and highlights included, the way a warm front light does
+- **Brightness** (0–24): dims the page itself, so it can go darker than your screen's lowest setting while keeping text contrast
+- **Warm light schedule**: sunset to sunrise (computed on the device, from your time zone or, if you allow it, your location) or custom times, fading in and out gradually
+- **Dark mode at night**: on the same schedule, or following the system
+- Pure-black dark theme, so OLED pixels switch off
+
 **Library**
 - Drag and drop or pick files; duplicates are detected
 - Grid or list view; sort by recent, title, author, series or date added
@@ -93,6 +100,7 @@ a native wrapper.
 | `←` `↑` `Shift+Space` `PageUp` | Previous page |
 | `Enter` / `M` | Show or hide the toolbar |
 | `A` | Display settings |
+| `L` | Light (brightness and warmth) |
 | `G` / `T` | Go to / contents |
 | `F` / `/` | Search |
 | `N` | Notebook |

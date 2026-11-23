@@ -90,6 +90,21 @@ await page.waitForFunction(() => /result/.test(document.querySelector('.search-s
 await shot('08-search')
 await page.keyboard.press('Escape')
 
+// front light: warmth tints the page and is wired into images through #os-light
+await page.keyboard.press('l')
+await page.waitForSelector('#panel-light:not([hidden])')
+await page.evaluate(() => openspark.settings.set({ warmth: 20, brightness: 18 }))
+await page.waitForTimeout(300)
+await shot('08b-light')
+const lit = await page.evaluate(() => {
+    const { doc } = openspark.reader.view.renderer.getContents()[0]
+    const [r, g, b] = getComputedStyle(doc.documentElement).backgroundColor.match(/\d+/g).map(Number)
+    return { warm: r > g && g > b, matrix: !!doc.querySelector('#os-light feColorMatrix[values]') }
+})
+assert(lit.warm && lit.matrix, `warm light tints the page (${JSON.stringify(lit)})`)
+await page.evaluate(() => openspark.settings.set({ warmth: 0, brightness: 24 }))
+await page.keyboard.press('Escape')
+
 await page.keyboard.press('Escape') // back to library
 await page.waitForSelector('#library:not([hidden])')
 await page.waitForTimeout(300)
