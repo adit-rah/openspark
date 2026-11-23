@@ -71,6 +71,20 @@ The repo includes a GitHub Pages workflow (`.github/workflows/pages.yml`). Enabl
 **Settings → Pages → Source: GitHub Actions** and every push to `main` publishes the app.
 Any other static host (Netlify, Cloudflare Pages, a Raspberry Pi) works the same way.
 
+### Install on iPhone or iPad
+
+OpenSpark is a Progressive Web App, so it installs straight from Safari with no App Store:
+
+1. Host it over HTTPS (for example with the GitHub Pages workflow above) and open the URL in **Safari**.
+2. Tap **Share** → **Add to Home Screen**.
+3. Launch it from the home screen. It runs full screen, works offline, and its storage is
+   exempt from Safari's 7-day cleanup of website data.
+
+Add books with **Add books**: the iOS file picker lets you choose from Files, iCloud Drive
+or other storage providers. iOS doesn't let web apps register as an "Open in…" target for
+e-book files, so you can't send a book to OpenSpark from the share sheet; that would take
+a native wrapper.
+
 ## Keyboard shortcuts
 
 | Key | Action |

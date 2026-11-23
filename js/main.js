@@ -2,8 +2,8 @@ import { Library } from './library.js'
 import { Reader } from './reader.js'
 import { db, requestPersistence } from './db.js'
 import { fontFaceCSS, settings } from './settings.js'
-import { hydrateIcons } from './icons.js'
-import { $, toast, modal, h } from './util.js'
+import { hydrateIcons, icon } from './icons.js'
+import { $, toast, modal, h, storage } from './util.js'
 
 // fonts for the app UI (book pages get their own copy)
 document.head.append(Object.assign(document.createElement('style'), { textContent: fontFaceCSS() }))
@@ -75,6 +75,28 @@ addEventListener('hashchange', e => {
         history.replaceState({ fromLibrary: true }, '')
     route()
 })
+
+// ---- iPhone / iPad
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+if (isIOS) {
+    // iOS greys out file types it has no system type for (.mobi, .azw3, .fb2…),
+    // so let every file through the picker and check the type ourselves.
+    $('#file-input').removeAttribute('accept')
+    // Safari may wipe a site's storage after 7 days without a visit; home-screen apps are exempt.
+    if (!isStandalone && !storage.get('openspark:ios-tip-dismissed', false)) {
+        const tip = h('div', { class: 'install-tip', role: 'note' },
+            h('div', {},
+                h('strong', {}, 'Install on your iPhone'),
+                h('span', {}, ' Tap the Share button, then “Add to Home Screen”. It opens full screen, works offline, and keeps your books safe from Safari’s storage cleanup.')),
+            h('button', { class: 'icon-btn small', 'aria-label': 'Dismiss', html: icon('close'), onclick: () => {
+                storage.set('openspark:ios-tip-dismissed', true)
+                tip.remove()
+            } }))
+        $('.lib-body').prepend(tip)
+    }
+}
 
 // Open files handed to the installed app by the OS ("Open with…")
 if ('launchQueue' in window) {
