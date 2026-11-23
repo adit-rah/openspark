@@ -1,0 +1,15 @@
+{
+  "name": "openspark",
+  "version": "0.1.0",
+  "description": "A distraction-free e-reader for DRM-free EPUB, MOBI and AZW3 books, with an e-ink look.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node serve.mjs 8080",
+    "test": "node tests/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

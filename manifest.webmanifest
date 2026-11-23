@@ -1,0 +1,25 @@
+{
+  "name": "OpenSpark",
+  "short_name": "OpenSpark",
+  "description": "A distraction-free e-reader with an e-ink look. No store, no account. Just your books.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#f4f1ea",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "application/epub+zip": [".epub"],
+        "application/x-mobipocket-ebook": [".mobi", ".prc"],
+        "application/vnd.amazon.ebook": [".azw", ".azw3", ".kf8"],
+        "application/x-fictionbook+xml": [".fb2"],
+        "application/vnd.comicbook+zip": [".cbz"]
+      }
+    }
+  ]
+}

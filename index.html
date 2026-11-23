@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  Books are untrusted content. This policy is inherited by the blob: iframes
+  that render book pages, so any <script> inside an e-book is blocked.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self'; style-src 'self' 'unsafe-inline' blob: data:; img-src 'self' blob: data:; font-src 'self' blob: data:; media-src 'self' blob: data:; frame-src 'self' blob:; connect-src 'self' blob: data:; object-src 'none'; base-uri 'none'">
+<meta name="theme-color" content="#f4f1ea">
+<meta name="description" content="OpenSpark: a distraction-free e-reader with an e-ink look. No store, no account. Just your books.">
+<title>OpenSpark</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/app.css">
+<script type="module" src="js/main.js"></script>
+</head>
+<body>
+
+<!-- ───────────────────────── Library ───────────────────────── -->
+<section id="library" class="view" aria-label="Library">
+  <header class="lib-header">
+    <div class="lib-title-row">
+      <h1 class="lib-title">Library</h1>
+      <div class="lib-actions">
+        <button class="icon-btn" id="btn-view-mode" title="Switch between grid and list" aria-label="Switch between grid and list"></button>
+        <button class="icon-btn" id="btn-sort" title="Sort and filter" aria-label="Sort and filter" aria-haspopup="menu"></button>
+        <button class="btn btn-primary" id="btn-add"><span class="btn-icon" data-icon="plus"></span><span>Add books</span></button>
+      </div>
+    </div>
+    <div class="lib-search-row">
+      <label class="search-field">
+        <span data-icon="search"></span>
+        <input type="search" id="lib-search" placeholder="Search your library" autocomplete="off" spellcheck="false">
+      </label>
+    </div>
+    <nav class="lib-tabs" id="lib-tabs" aria-label="Filter"></nav>
+  </header>
+
+  <main class="lib-body">
+    <div id="lib-collection-bar" class="collection-bar" hidden></div>
+    <div id="lib-grid" class="book-grid" role="list"></div>
+    <div id="lib-empty" class="empty-state" hidden>
+      <div class="empty-art" aria-hidden="true"></div>
+      <h2>Your library is empty</h2>
+      <p>Add DRM-free <strong>EPUB</strong>, <strong>MOBI</strong>, <strong>AZW3</strong>, <strong>FB2</strong> or <strong>CBZ</strong> files.<br>They stay on this device. Nothing is uploaded.</p>
+      <button class="btn btn-primary" id="btn-add-empty"><span class="btn-icon" data-icon="plus"></span><span>Add books</span></button>
+      <p class="hint">Or drag and drop files anywhere on this page.</p>
+    </div>
+    <div id="lib-noresults" class="empty-state small" hidden>
+      <p>No books match.</p>
+    </div>
+  </main>
+
+  <input type="file" id="file-input" multiple hidden
+    accept=".epub,.mobi,.azw3,.azw,.kf8,.prc,.fb2,.fbz,.cbz,application/epub+zip,application/x-mobipocket-ebook,application/vnd.amazon.ebook,application/x-fictionbook+xml,application/vnd.comicbook+zip">
+  <div id="drop-overlay" hidden><div>Drop books to add them</div></div>
+</section>
+
+<!-- ───────────────────────── Reader ───────────────────────── -->
+<section id="reader" class="view" aria-label="Reader" hidden>
+  <div id="device">
+    <div id="screen">
+      <div id="book-host"></div>
+
+      <div id="bookmark-ribbon" hidden aria-hidden="true"></div>
+
+      <!-- always-visible status line (Kindle-style progress) -->
+      <button id="status-left" class="status" title="Tap to change what is shown"></button>
+      <div id="status-right" class="status"></div>
+
+      <!-- toolbar, shown on tapping the top of the page -->
+      <header id="reader-top" class="chrome" hidden>
+        <div class="top-row">
+          <button class="icon-btn" id="btn-back" title="Back to library" aria-label="Back to library"></button>
+          <div class="top-title" id="reader-title"></div>
+          <div class="top-actions">
+            <button class="icon-btn" id="btn-aa" title="Display settings" aria-label="Display settings"></button>
+            <button class="icon-btn" id="btn-goto" title="Go to" aria-label="Go to"></button>
+            <button class="icon-btn" id="btn-search" title="Search in book" aria-label="Search in book"></button>
+            <button class="icon-btn" id="btn-notebook" title="Notes and highlights" aria-label="Notes and highlights"></button>
+            <button class="icon-btn" id="btn-bookmark" title="Add bookmark" aria-label="Add bookmark"></button>
+          </div>
+        </div>
+      </header>
+      <footer id="reader-bottom" class="chrome" hidden>
+        <div class="bottom-chapter" id="bottom-chapter"></div>
+        <div class="bottom-slider-row">
+          <input type="range" id="progress-slider" min="0" max="1" step="any" aria-label="Reading progress">
+        </div>
+        <div class="bottom-meta" id="bottom-meta"></div>
+      </footer>
+
+      <!-- sheets / panels -->
+      <div id="scrim" hidden></div>
+      <div id="panel-aa" class="sheet" hidden role="dialog" aria-label="Display settings"></div>
+      <div id="panel-goto" class="drawer" hidden role="dialog" aria-label="Go to"></div>
+      <div id="panel-search" class="drawer" hidden role="dialog" aria-label="Search"></div>
+      <div id="panel-notebook" class="drawer" hidden role="dialog" aria-label="Notebook"></div>
+
+      <div id="sel-popup" class="popup" hidden></div>
+      <div id="note-dialog" class="dialog" hidden role="dialog" aria-label="Note"></div>
+
+      <div id="reader-loading" class="loading" hidden><div class="spinner"></div><div>Opening…</div></div>
+      <div id="flash" aria-hidden="true"></div>
+    </div>
+    <div id="bezel-mark" aria-hidden="true">openspark</div>
+  </div>
+</section>
+
+<div id="menu-layer"></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<div id="modal-layer"></div>
+</body>
+</html>
